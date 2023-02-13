@@ -3,25 +3,29 @@ import 'package:pigeon/pigeon.dart';
 @HostApi()
 abstract class LibSuApi {
   @async
-  bool? isAppGrantedRoot();
-
-  @async
   String? getPlatformVersion();
 
   @async
+  void configure(bool mountMaster, int timeoutInSeconds, bool debug);
+
+  @async
+  bool? isAppGrantedRoot();
+
+  @async
   int createShell();
-}
 
-enum ShellStatus {
-  /// Shell status: Non-root shell. Constant value: 0
-  nonRootShell,
+  @async
+  int getShellStatus();
 
-  /// Shell status: Root shell. Constant value: 1
-  rootShell,
+  @async
+  bool isRoot();
 
-  /// Shell status: Root shell with mount master enabled. Constant value: 2
-  rootMountMaster,
+  @async
+  bool waitAndClose(int timeoutInSeconds);
 
-  /// Shell status: Unknown.Constant value: -1
-  unknown,
+  @async
+  void waitForeverAndClose();
+
+  @async
+  void close();
 }

@@ -32,23 +32,6 @@ public class Pigeon {
     return errorList;
   }
 
-  public enum ShellStatus {
-    /** Shell status: Non-root shell. Constant value: 0 */
-    NON_ROOT_SHELL(0),
-    /** Shell status: Root shell. Constant value: 1 */
-    ROOT_SHELL(1),
-    /** Shell status: Root shell with mount master enabled. Constant value: 2 */
-    ROOT_MOUNT_MASTER(2),
-    /** Shell status: Unknown.Constant value: -1 */
-    UNKNOWN(3);
-
-    private final int index;
-
-    private ShellStatus(final int index) {
-      this.index = index;
-    }
-  }
-
   public interface Result<T> {
     void success(T result);
 
@@ -57,11 +40,23 @@ public class Pigeon {
   /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
   public interface LibSuApi {
 
-    void isAppGrantedRoot(Result<Boolean> result);
-
     void getPlatformVersion(Result<String> result);
 
+    void configure(@NonNull Boolean mountMaster, @NonNull Long timeoutInSeconds, @NonNull Boolean debug, Result<Void> result);
+
+    void isAppGrantedRoot(Result<Boolean> result);
+
     void createShell(Result<Long> result);
+
+    void getShellStatus(Result<Long> result);
+
+    void isRoot(Result<Boolean> result);
+
+    void waitAndClose(@NonNull Long timeoutInSeconds, Result<Boolean> result);
+
+    void waitForeverAndClose(Result<Void> result);
+
+    void close(Result<Void> result);
 
     /** The codec used by LibSuApi. */
     static MessageCodec<Object> getCodec() {
@@ -69,38 +64,6 @@ public class Pigeon {
     }
     /**Sets up an instance of `LibSuApi` to handle messages through the `binaryMessenger`. */
     static void setup(BinaryMessenger binaryMessenger, LibSuApi api) {
-      {
-        BasicMessageChannel<Object> channel =
-            new BasicMessageChannel<>(
-                binaryMessenger, "dev.flutter.pigeon.LibSuApi.isAppGrantedRoot", getCodec());
-        if (api != null) {
-          channel.setMessageHandler(
-              (message, reply) -> {
-                ArrayList<Object> wrapped = new ArrayList<Object>();
-                try {
-                  Result<Boolean> resultCallback = 
-                      new Result<Boolean>() {
-                        public void success(Boolean result) {
-                          wrapped.add(0, result);
-                          reply.reply(wrapped);
-                        }
-
-                        public void error(Throwable error) {
-                          ArrayList<Object> wrappedError = wrapError(error);
-                          reply.reply(wrappedError);
-                        }
-                      };
-
-                  api.isAppGrantedRoot(resultCallback);
-                } catch (Error | RuntimeException exception) {
-                  ArrayList<Object> wrappedError = wrapError(exception);
-                  reply.reply(wrappedError);
-                }
-              });
-        } else {
-          channel.setMessageHandler(null);
-        }
-      }
       {
         BasicMessageChannel<Object> channel =
             new BasicMessageChannel<>(
@@ -136,6 +99,84 @@ public class Pigeon {
       {
         BasicMessageChannel<Object> channel =
             new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.configure", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  ArrayList<Object> args = (ArrayList<Object>) message;
+                  assert args != null;
+                  Boolean mountMasterArg = (Boolean) args.get(0);
+                  if (mountMasterArg == null) {
+                    throw new NullPointerException("mountMasterArg unexpectedly null.");
+                  }
+                  Number timeoutInSecondsArg = (Number) args.get(1);
+                  if (timeoutInSecondsArg == null) {
+                    throw new NullPointerException("timeoutInSecondsArg unexpectedly null.");
+                  }
+                  Boolean debugArg = (Boolean) args.get(2);
+                  if (debugArg == null) {
+                    throw new NullPointerException("debugArg unexpectedly null.");
+                  }
+                  Result<Void> resultCallback = 
+                      new Result<Void>() {
+                        public void success(Void result) {
+                          wrapped.add(0, null);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.configure(mountMasterArg, (timeoutInSecondsArg == null) ? null : timeoutInSecondsArg.longValue(), debugArg, resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.isAppGrantedRoot", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  Result<Boolean> resultCallback = 
+                      new Result<Boolean>() {
+                        public void success(Boolean result) {
+                          wrapped.add(0, result);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.isAppGrantedRoot(resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
                 binaryMessenger, "dev.flutter.pigeon.LibSuApi.createShell", getCodec());
         if (api != null) {
           channel.setMessageHandler(
@@ -156,6 +197,172 @@ public class Pigeon {
                       };
 
                   api.createShell(resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.getShellStatus", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  Result<Long> resultCallback = 
+                      new Result<Long>() {
+                        public void success(Long result) {
+                          wrapped.add(0, result);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.getShellStatus(resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.isRoot", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  Result<Boolean> resultCallback = 
+                      new Result<Boolean>() {
+                        public void success(Boolean result) {
+                          wrapped.add(0, result);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.isRoot(resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.waitAndClose", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  ArrayList<Object> args = (ArrayList<Object>) message;
+                  assert args != null;
+                  Number timeoutInSecondsArg = (Number) args.get(0);
+                  if (timeoutInSecondsArg == null) {
+                    throw new NullPointerException("timeoutInSecondsArg unexpectedly null.");
+                  }
+                  Result<Boolean> resultCallback = 
+                      new Result<Boolean>() {
+                        public void success(Boolean result) {
+                          wrapped.add(0, result);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.waitAndClose((timeoutInSecondsArg == null) ? null : timeoutInSecondsArg.longValue(), resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.waitForeverAndClose", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  Result<Void> resultCallback = 
+                      new Result<Void>() {
+                        public void success(Void result) {
+                          wrapped.add(0, null);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.waitForeverAndClose(resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.close", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  Result<Void> resultCallback = 
+                      new Result<Void>() {
+                        public void success(Void result) {
+                          wrapped.add(0, null);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.close(resultCallback);
                 } catch (Error | RuntimeException exception) {
                   ArrayList<Object> wrappedError = wrapError(exception);
                   reply.reply(wrappedError);

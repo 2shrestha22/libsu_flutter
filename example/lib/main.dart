@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:libsu_flutter/pigeon.dart';
+import 'package:libsu_flutter/libsu_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +17,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  final _libSuApi = LibSuApi();
+  final _shell = Shell.instance;
 
   @override
   void initState() {
@@ -32,7 +32,9 @@ class _MyAppState extends State<MyApp> {
     // We also handle the message potentially returning null.
     try {
       platformVersion =
-          await _libSuApi.getPlatformVersion() ?? 'Unknown platform version';
+          await _shell.getPlatformVersion() ?? 'Unknown platform version';
+
+      await _shell.configure(mountMaster: false, debug: true);
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -52,41 +54,70 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('libsu_flutter example'),
         ),
         body: Builder(builder: (context) {
           return Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('Running on: $_platformVersion\n'),
-                TextButton(
+                Center(child: Text('Running on: $_platformVersion\n')),
+                ElevatedButton(
                   onPressed: () async {
-                    snackbar(bool? res) =>
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content:
-                                Text('Root Grant Status: ${res.toString()}'),
-                          ),
-                        );
-                    final res = await _libSuApi.isAppGrantedRoot();
+                    snackbar(bool? res) => showSnackbar(
+                        context, 'isAppGrantedRoot: ${res.toString()}');
+                    final res = await _shell.isAppGrantedRoot();
                     snackbar(res);
                   },
-                  child: const Text('Check root permission'),
+                  child: const Text('isAppGrantedRoot'),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () async {
-                    snackbar(int res) =>
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Shell Status: ${res.toString()}'),
-                          ),
-                        );
-                    final res = await _libSuApi.createShell();
+                    snackbar(String res) =>
+                        showSnackbar(context, 'createShell: ${res.toString()}');
+                    final res = await _shell.createShell();
+                    snackbar(res.toString());
+                  },
+                  child: const Text('createShell'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    snackbar(ShellStatus? res) => showSnackbar(
+                        context, 'getShellStatus: ${res.toString()}');
+                    final res = await _shell.getShellStatus();
                     snackbar(res);
                   },
-                  child: const Text('Create a Shell.'),
-                )
+                  child: const Text('getShellStatus'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    snackbar(String? res) => showSnackbar(
+                        context, 'waitForeverAndClose: ${res.toString()}');
+                    await _shell.waitForeverAndClose();
+                    snackbar('Closed');
+                  },
+                  child: const Text('waitForeverAndClose'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    snackbar(bool? res) => showSnackbar(
+                        context, 'waitAndClose: ${res.toString()}');
+                    final res =
+                        await _shell.waitAndClose(const Duration(seconds: 10));
+                    snackbar(res);
+                  },
+                  child: const Text('waitAndClose'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    snackbar(String? res) =>
+                        showSnackbar(context, 'close: ${res.toString()}');
+                    final res = await _shell.close();
+                    snackbar('Closed');
+                  },
+                  child: const Text('close'),
+                ),
               ],
             ),
           );
@@ -95,3 +126,8 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
+void showSnackbar(BuildContext context, String data) =>
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(data)));
