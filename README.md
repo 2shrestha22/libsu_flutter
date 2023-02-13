@@ -1,6 +1,6 @@
 # libsu_flutter
 
-A new Flutter plugin project.
+A Flutter plugin to use libsu (https://github.com/topjohnwu/libsu) core module for apps using root permissions.
 
 ## Getting Started
 
