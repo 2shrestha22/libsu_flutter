@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -34,7 +36,7 @@ class _MyAppState extends State<MyApp> {
       platformVersion =
           await _shell.getPlatformVersion() ?? 'Unknown platform version';
 
-      await _shell.configure(mountMaster: false, debug: true);
+      await _shell.configure(mountMaster: false, debug: false);
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -113,10 +115,22 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () async {
                     snackbar(String? res) =>
                         showSnackbar(context, 'close: ${res.toString()}');
-                    final res = await _shell.close();
+                    await _shell.close();
                     snackbar('Closed');
                   },
                   child: const Text('close'),
+                ),
+                TextField(
+                  onSubmitted: (value) async {
+                    log(value);
+                    _shell.submit(value);
+                  },
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    _shell.listen();
+                  },
+                  child: const Text('listen'),
                 ),
               ],
             ),

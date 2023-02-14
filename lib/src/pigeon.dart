@@ -8,6 +8,68 @@ import 'dart:typed_data' show Float64List, Int32List, Int64List, Uint8List;
 import 'package:flutter/foundation.dart' show ReadBuffer, WriteBuffer;
 import 'package:flutter/services.dart';
 
+class ShellOut {
+  ShellOut({
+    required this.stdout,
+    required this.stderr,
+    required this.success,
+    required this.code,
+  });
+
+  List<String?> stdout;
+
+  List<String?> stderr;
+
+  bool success;
+
+  /// the return code of the last operation in the shell. If the job is
+  /// executed properly, the code should range from 0-255. If the job fails to
+  /// execute, it will return JOB_NOT_EXECUTED (-1).
+  int code;
+
+  Object encode() {
+    return <Object?>[
+      stdout,
+      stderr,
+      success,
+      code,
+    ];
+  }
+
+  static ShellOut decode(Object result) {
+    result as List<Object?>;
+    return ShellOut(
+      stdout: (result[0] as List<Object?>?)!.cast<String?>(),
+      stderr: (result[1] as List<Object?>?)!.cast<String?>(),
+      success: result[2]! as bool,
+      code: result[3]! as int,
+    );
+  }
+}
+
+class _LibSuApiCodec extends StandardMessageCodec {
+  const _LibSuApiCodec();
+  @override
+  void writeValue(WriteBuffer buffer, Object? value) {
+    if (value is ShellOut) {
+      buffer.putUint8(128);
+      writeValue(buffer, value.encode());
+    } else {
+      super.writeValue(buffer, value);
+    }
+  }
+
+  @override
+  Object? readValueOfType(int type, ReadBuffer buffer) {
+    switch (type) {
+      case 128: 
+        return ShellOut.decode(readValue(buffer)!);
+      default:
+        return super.readValueOfType(type, buffer);
+    }
+  }
+}
+
 class LibSuApi {
   /// Constructor for [LibSuApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
@@ -16,7 +78,7 @@ class LibSuApi {
       : _binaryMessenger = binaryMessenger;
   final BinaryMessenger? _binaryMessenger;
 
-  static const MessageCodec<Object?> codec = StandardMessageCodec();
+  static const MessageCodec<Object?> codec = _LibSuApiCodec();
 
   Future<String?> getPlatformVersion() async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
@@ -233,6 +295,60 @@ class LibSuApi {
       );
     } else {
       return;
+    }
+  }
+
+  Future<ShellOut> exec(String arg_cmd) async {
+    final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.LibSuApi.exec', codec,
+        binaryMessenger: _binaryMessenger);
+    final List<Object?>? replyList =
+        await channel.send(<Object?>[arg_cmd]) as List<Object?>?;
+    if (replyList == null) {
+      throw PlatformException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel.',
+      );
+    } else if (replyList.length > 1) {
+      throw PlatformException(
+        code: replyList[0]! as String,
+        message: replyList[1] as String?,
+        details: replyList[2],
+      );
+    } else if (replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (replyList[0] as ShellOut?)!;
+    }
+  }
+
+  Future<ShellOut> submit(String arg_cmd) async {
+    final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.LibSuApi.submit', codec,
+        binaryMessenger: _binaryMessenger);
+    final List<Object?>? replyList =
+        await channel.send(<Object?>[arg_cmd]) as List<Object?>?;
+    if (replyList == null) {
+      throw PlatformException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel.',
+      );
+    } else if (replyList.length > 1) {
+      throw PlatformException(
+        code: replyList[0]! as String,
+        message: replyList[1] as String?,
+        details: replyList[2],
+      );
+    } else if (replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (replyList[0] as ShellOut?)!;
     }
   }
 }

@@ -2,23 +2,34 @@ package np.com.skstha.libsu_flutter;
 
 import androidx.annotation.NonNull;
 
+import com.topjohnwu.superuser.CallbackList;
 import com.topjohnwu.superuser.Shell;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.plugin.common.EventChannel;
 
 /**
  * LibsuFlutterPlugin
  */
-public class LibsuFlutterPlugin implements FlutterPlugin, Pigeon.LibSuApi {
+public class LibsuFlutterPlugin implements FlutterPlugin, Pigeon.LibSuApi, EventChannel.StreamHandler {
 
     private Shell _shell = null;
+
+    private EventChannel.EventSink eventSink = null;
+
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         Pigeon.LibSuApi.setup(flutterPluginBinding.getBinaryMessenger(), this);
+
+        String networkEventChannel = "np.com.skstha.libsu_flutter_eventchannels/shellOut";
+        new EventChannel(flutterPluginBinding.getBinaryMessenger(), networkEventChannel)
+                .setStreamHandler(this);
+
     }
 
     @Override
@@ -120,4 +131,39 @@ public class LibsuFlutterPlugin implements FlutterPlugin, Pigeon.LibSuApi {
         }
     }
 
+    @Override
+    public void exec(@NonNull String cmd, Pigeon.Result<Pigeon.ShellOut> result) {
+        final Shell.Result res = Shell.cmd(cmd).exec();
+
+        final Pigeon.ShellOut.Builder shellOut = new Pigeon.ShellOut.Builder()
+                .setStdout(res.getOut())
+                .setStderr(res.getErr())
+                .setCode((long) res.getCode())
+                .setSuccess(res.isSuccess());
+        result.success(shellOut.build());
+    }
+
+    @Override
+    public void submit(@NonNull String cmd, Pigeon.Result<Pigeon.ShellOut> result) {
+        // Receive output in real-time
+        List<String> callbackList = new CallbackList<String>() {
+            @Override
+            public void onAddElement(String s) {
+                if (eventSink == null) return;
+                eventSink.success(s);
+            }
+        };
+        Shell.cmd(cmd).to(callbackList).submit();
+    }
+
+
+    @Override
+    public void onListen(Object arguments, EventChannel.EventSink events) {
+        eventSink = events;
+    }
+
+    @Override
+    public void onCancel(Object arguments) {
+        eventSink = null;
+    }
 }

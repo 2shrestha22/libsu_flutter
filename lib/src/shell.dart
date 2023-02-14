@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:flutter/services.dart';
 import 'package:libsu_flutter/src/pigeon.dart';
 import 'package:libsu_flutter/src/shell_status.dart';
 
@@ -115,6 +118,24 @@ class Shell {
 
   /// Close the shell and release any system resources associated with the shell.
   Future<void> close() => _api.close();
+
+  /// Execute a command and return the result.
+  Future<ShellOut> exec(String cmd) => _api.exec(cmd);
+
+  /// Execute a command and return the result.
+  void submit(String cmd) => _api.submit(cmd);
+
+  /// Execute a command. Result will be added to the stream.
+  void listen() {
+    const shellOutChannel =
+        EventChannel('np.com.skstha.libsu_flutter_eventchannels/shellOut');
+
+    shellOutChannel.receiveBroadcastStream().map((event) {
+      return event;
+    }).listen((event) {
+      print(event.toString());
+    });
+  }
 
   /// Provides platform version.
   Future<String?> getPlatformVersion() => _api.getPlatformVersion();

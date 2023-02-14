@@ -32,11 +32,164 @@ public class Pigeon {
     return errorList;
   }
 
+  /** Generated class from Pigeon that represents data sent in messages. */
+  public static final class ShellOut {
+    private @NonNull List<String> stdout;
+
+    public @NonNull List<String> getStdout() {
+      return stdout;
+    }
+
+    public void setStdout(@NonNull List<String> setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"stdout\" is null.");
+      }
+      this.stdout = setterArg;
+    }
+
+    private @NonNull List<String> stderr;
+
+    public @NonNull List<String> getStderr() {
+      return stderr;
+    }
+
+    public void setStderr(@NonNull List<String> setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"stderr\" is null.");
+      }
+      this.stderr = setterArg;
+    }
+
+    private @NonNull Boolean success;
+
+    public @NonNull Boolean getSuccess() {
+      return success;
+    }
+
+    public void setSuccess(@NonNull Boolean setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"success\" is null.");
+      }
+      this.success = setterArg;
+    }
+
+    /**
+     * the return code of the last operation in the shell. If the job is
+     * executed properly, the code should range from 0-255. If the job fails to
+     * execute, it will return JOB_NOT_EXECUTED (-1).
+     */
+    private @NonNull Long code;
+
+    public @NonNull Long getCode() {
+      return code;
+    }
+
+    public void setCode(@NonNull Long setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"code\" is null.");
+      }
+      this.code = setterArg;
+    }
+
+    /** Constructor is private to enforce null safety; use Builder. */
+    private ShellOut() {}
+
+    public static final class Builder {
+
+      private @Nullable List<String> stdout;
+
+      public @NonNull Builder setStdout(@NonNull List<String> setterArg) {
+        this.stdout = setterArg;
+        return this;
+      }
+
+      private @Nullable List<String> stderr;
+
+      public @NonNull Builder setStderr(@NonNull List<String> setterArg) {
+        this.stderr = setterArg;
+        return this;
+      }
+
+      private @Nullable Boolean success;
+
+      public @NonNull Builder setSuccess(@NonNull Boolean setterArg) {
+        this.success = setterArg;
+        return this;
+      }
+
+      private @Nullable Long code;
+
+      public @NonNull Builder setCode(@NonNull Long setterArg) {
+        this.code = setterArg;
+        return this;
+      }
+
+      public @NonNull ShellOut build() {
+        ShellOut pigeonReturn = new ShellOut();
+        pigeonReturn.setStdout(stdout);
+        pigeonReturn.setStderr(stderr);
+        pigeonReturn.setSuccess(success);
+        pigeonReturn.setCode(code);
+        return pigeonReturn;
+      }
+    }
+
+    @NonNull
+    ArrayList<Object> toList() {
+      ArrayList<Object> toListResult = new ArrayList<Object>(4);
+      toListResult.add(stdout);
+      toListResult.add(stderr);
+      toListResult.add(success);
+      toListResult.add(code);
+      return toListResult;
+    }
+
+    static @NonNull ShellOut fromList(@NonNull ArrayList<Object> list) {
+      ShellOut pigeonResult = new ShellOut();
+      Object stdout = list.get(0);
+      pigeonResult.setStdout((List<String>) stdout);
+      Object stderr = list.get(1);
+      pigeonResult.setStderr((List<String>) stderr);
+      Object success = list.get(2);
+      pigeonResult.setSuccess((Boolean) success);
+      Object code = list.get(3);
+      pigeonResult.setCode((code == null) ? null : ((code instanceof Integer) ? (Integer) code : (Long) code));
+      return pigeonResult;
+    }
+  }
+
   public interface Result<T> {
     void success(T result);
 
     void error(Throwable error);
   }
+
+  private static class LibSuApiCodec extends StandardMessageCodec {
+    public static final LibSuApiCodec INSTANCE = new LibSuApiCodec();
+
+    private LibSuApiCodec() {}
+
+    @Override
+    protected Object readValueOfType(byte type, @NonNull ByteBuffer buffer) {
+      switch (type) {
+        case (byte) 128:
+          return ShellOut.fromList((ArrayList<Object>) readValue(buffer));
+        default:
+          return super.readValueOfType(type, buffer);
+      }
+    }
+
+    @Override
+    protected void writeValue(@NonNull ByteArrayOutputStream stream, Object value) {
+      if (value instanceof ShellOut) {
+        stream.write(128);
+        writeValue(stream, ((ShellOut) value).toList());
+      } else {
+        super.writeValue(stream, value);
+      }
+    }
+  }
+
   /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
   public interface LibSuApi {
 
@@ -58,9 +211,13 @@ public class Pigeon {
 
     void close(Result<Void> result);
 
+    void exec(@NonNull String cmd, Result<ShellOut> result);
+
+    void submit(@NonNull String cmd, Result<ShellOut> result);
+
     /** The codec used by LibSuApi. */
     static MessageCodec<Object> getCodec() {
-      return new StandardMessageCodec();
+      return LibSuApiCodec.INSTANCE;
     }
     /**Sets up an instance of `LibSuApi` to handle messages through the `binaryMessenger`. */
     static void setup(BinaryMessenger binaryMessenger, LibSuApi api) {
@@ -363,6 +520,82 @@ public class Pigeon {
                       };
 
                   api.close(resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.exec", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  ArrayList<Object> args = (ArrayList<Object>) message;
+                  assert args != null;
+                  String cmdArg = (String) args.get(0);
+                  if (cmdArg == null) {
+                    throw new NullPointerException("cmdArg unexpectedly null.");
+                  }
+                  Result<ShellOut> resultCallback = 
+                      new Result<ShellOut>() {
+                        public void success(ShellOut result) {
+                          wrapped.add(0, result);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.exec(cmdArg, resultCallback);
+                } catch (Error | RuntimeException exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  reply.reply(wrappedError);
+                }
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.LibSuApi.submit", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  ArrayList<Object> args = (ArrayList<Object>) message;
+                  assert args != null;
+                  String cmdArg = (String) args.get(0);
+                  if (cmdArg == null) {
+                    throw new NullPointerException("cmdArg unexpectedly null.");
+                  }
+                  Result<ShellOut> resultCallback = 
+                      new Result<ShellOut>() {
+                        public void success(ShellOut result) {
+                          wrapped.add(0, result);
+                          reply.reply(wrapped);
+                        }
+
+                        public void error(Throwable error) {
+                          ArrayList<Object> wrappedError = wrapError(error);
+                          reply.reply(wrappedError);
+                        }
+                      };
+
+                  api.submit(cmdArg, resultCallback);
                 } catch (Error | RuntimeException exception) {
                   ArrayList<Object> wrappedError = wrapError(exception);
                   reply.reply(wrappedError);
